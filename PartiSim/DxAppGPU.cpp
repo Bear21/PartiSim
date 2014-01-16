@@ -93,8 +93,16 @@ void DxApp::Render()
 	unsigned int initTemp[4] = {0,0,0,0};
 	m_pImmediateContext->ClearUnorderedAccessViewUint(m_pTextureBufferUAView, initTemp);
 	m_flip = !m_flip;
-	while(m_holdTime>clock())
+
+	if(m_settings.timeMode!=0 && (m_settings.inputType & 36)!=0)
 	{
+		float gap;
+		//temp code for stable network play
+		while((gap = m_holdTime.Peek())<1.f/m_settings.timeMode)
+		{
+			if((gap-1.f/m_settings.timeMode)>0.002f)
+				Sleep(1);
+		}
 	}
 	m_pSwapChain->Present( 0, 0 );
 	if(m_settings.profile)

@@ -90,7 +90,15 @@ float4 sim(PS_INPUT_TEX input) : SV_Target
 	output.zw = loc+vel*timeP;
 
 	int result;
-	float2 aa = loc % 1;
+	
+	uint addr = trunc(loc.x*tscale);
+	addr += (trunc(loc.y*tscale))*dimensions.x;
+	addr*=4;
+	tx2Buffer.InterlockedAdd(addr, 100, result);
+
+
+	//antialiasing.
+	/*float2 aa = loc % 1;
 	uint addr = trunc(loc.x*tscale);
 	addr += (trunc(loc.y*tscale))*dimensions.x;
 	addr*=4;
@@ -105,8 +113,7 @@ float4 sim(PS_INPUT_TEX input) : SV_Target
 	tx2Buffer.InterlockedAdd(addr, share*100, result);
 	addr += 4;
 	share = (aa.x)*(aa.y);
-	tx2Buffer.InterlockedAdd(addr, share*100, result);
-	//tx2Buffer.Store(addr, 32);
+	tx2Buffer.InterlockedAdd(addr, share*100, result);*/
 
 	return output;
 }

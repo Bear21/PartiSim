@@ -20,7 +20,7 @@ DxApp::DxApp(void)
 	m_pTextureView(nullptr), m_pTextureRefView(nullptr),
 	m_performanceS(), m_performanceD(), m_performanceR(),
 	m_counterExpectedTime(0.f), m_flip(0),
-	m_simReset(0), m_simHalt(0)
+	m_simReset(0), m_simHalt(0), m_holdTime()
 {
 	m_settings.profile = 0;
 }
@@ -95,7 +95,7 @@ int DxApp::Init(DxAppSetupDesc *in_desc)
 				{
 					AppErrors::Record((AppErrors::DxAppErrors)result);
 				}
-				m_Comms.SendInit(in_desc->timeMode, 10);
+				m_Comms.SendInit(in_desc->timeMode, 30);
 			}
 		}
 		else if((m_settings.inputType & 32) == 32)
@@ -163,7 +163,6 @@ int DxApp::Run()
 	TimePast pcounter = TimePast();
 	wchar_t report[32];
 	m_counterChunk = 0.f;
-	m_holdTime = clock();
 	while (!m_close)
 	{
 		if((PeekMessage(&msg, m_hWnd, 0, 0, PM_REMOVE)) != 0)
@@ -173,8 +172,7 @@ int DxApp::Run()
 		}
 		else
 		{
-			if(m_settings.timeMode!=0)
-				m_holdTime+= 1000/m_settings.timeMode;
+			m_holdTime.Check();
 			pcounter.Reset();
 			Render();
 			m_counterChunk+=pcounter.Peek();

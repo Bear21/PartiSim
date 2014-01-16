@@ -219,7 +219,7 @@ int Comms::RecvInit(int &timeMeth)
 	return result;
 }
 
-//Hideous.
+
 int Comms::GetInput(SimInput &io)
 {
 	char inputBuffer[512];
@@ -251,8 +251,6 @@ int Comms::GetInput(SimInput &io)
 		else
 		{
 			offset = m_record[m_recordListHelper].numControl;
-			if(m_record[m_recordListHelper].numControl==1 && fromSock->numControl==1)
-				OutputDebugString(L"found you bugger");
 			m_record[m_recordListHelper].numControl += fromSock->numControl;
 			if(m_host==0)
 				m_record[m_recordListHelper].timeP = fromSock->timeP;
@@ -262,8 +260,6 @@ int Comms::GetInput(SimInput &io)
 			result = recv(m_clientSock, inputBuffer+8, 8+16*fromSock->numControl, NULL);
 			memcpy(&m_record[m_recordListHelper].controlInput[offset], &fromSock->controlInput[0], 16*fromSock->numControl);
 		}
-		if(m_record[m_recordListHelper].numControl>1)
-				OutputDebugString(L"found you bugger");
 		//m_record[m_recordListHelper].reserved1=m_recordListHelper;
 		m_recordListHelper++;
 		EnableBlocking(0, 0);
@@ -288,8 +284,6 @@ int Comms::GetInput(SimInput &io)
 				result = recv(m_clientSock, inputBuffer+8, 8+16*fromSock->numControl, NULL);
 				memcpy(&m_record[m_recordListHelper].controlInput[offset], &fromSock->controlInput[0], 16*fromSock->numControl);
 			}
-			if(m_record[m_recordListHelper].numControl>1)
-				OutputDebugString(L"found you bugger");
 			//m_record[m_recordListHelper].reserved1=m_recordListHelper;
 			m_recordListHelper++;
 		}
@@ -316,20 +310,15 @@ int Comms::GetInput(SimInput &io)
 	else
 	{
 		offset = m_record[m_target+m_delay].numControl;
-		if(m_record[m_target+m_delay].reserved2==m_target+m_delay)
-			OutputDebugString(L"found you bugger");
 		m_record[m_target+m_delay].numControl += io.numControl;
 		if(m_host==1)
 			m_record[m_target+m_delay].timeP = io.timeP;
 	}
-	memcpy(&m_record[m_target+m_delay].controlInput[offset], &io.controlInput[0], 16*io.numControl);
-	//m_record[m_target+m_delay].reserved2=m_target+m_delay;
-	if(m_record[m_target+m_delay].numControl>1)
-			OutputDebugString(L"found you bugger");
+	if(m_record[m_target+m_delay].numControl!=0)
+		memcpy(&m_record[m_target+m_delay].controlInput[offset], &io.controlInput[0], 16*io.numControl);
+
 	io = m_record[m_target++];
 
-	//if(io.reserved1!=io.reserved2 || io.numControl>1)
-	//	OutputDebugString(L"found you bugger");
 	return 1;
 }
 

@@ -143,7 +143,7 @@ private:
 	int							m_oHeight;
 	float						m_scale;
 	int							m_noRedraw;
-	int							m_holdTime;
+	TimePast					m_holdTime;
 	int							m_simReset, m_simHalt;
 public:
 	DxApp(void);
