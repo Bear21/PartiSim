@@ -25,7 +25,6 @@ Default launch parameters:
 
 Default controls:
 =================
-
   Left mouse button: pull in particles
   
   Right mouse button: push away particles
@@ -33,4 +32,16 @@ Default controls:
   Spacebar: Stop particles
   
   R: Reset
+
+System requirements:
+====================
+CPU: As operating system recommends
+
+Graphics: Minimum: DirectX 11 with 256MB video memory, Recommended: HD6000 series AMD, GTX500 series Nvidia
+
+Memory: As operating system recommends
+
+Current version requires Windows Vista* or higher
+
+*Vista service spack 3 for x86 or service pack 2 for x64 for the requirement of directX 11.
 
