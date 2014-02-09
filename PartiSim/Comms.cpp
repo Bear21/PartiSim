@@ -1,4 +1,4 @@
-// Copyright (c) 2013 All Right Reserved, http://8bitbear.com/
+// Copyright (c) 2014 All Right Reserved, http://8bitbear.com/
 //
 // THIS CODE AND INFORMATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY 
 // KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
@@ -7,7 +7,7 @@
 //
 // <author>Stephen Wheeler</author>
 // <email>bear@8bitbear.com</email>
-// <date>2013-01-15</date>
+// <date>2014-01-15</date>
 #include "Comms.h"
 #include <stdio.h>
 
@@ -260,7 +260,6 @@ int Comms::GetInput(SimInput &io)
 			result = recv(m_clientSock, inputBuffer+8, 8+16*fromSock->numControl, NULL);
 			memcpy(&m_record[m_recordListHelper].controlInput[offset], &fromSock->controlInput[0], 16*fromSock->numControl);
 		}
-		//m_record[m_recordListHelper].reserved1=m_recordListHelper;
 		m_recordListHelper++;
 		EnableBlocking(0, 0);
 		while((result = recv(m_clientSock, inputBuffer, 8, NULL))==8)
@@ -284,10 +283,15 @@ int Comms::GetInput(SimInput &io)
 				result = recv(m_clientSock, inputBuffer+8, 8+16*fromSock->numControl, NULL);
 				memcpy(&m_record[m_recordListHelper].controlInput[offset], &fromSock->controlInput[0], 16*fromSock->numControl);
 			}
-			//m_record[m_recordListHelper].reserved1=m_recordListHelper;
 			m_recordListHelper++;
 		}
 	}
+	else if(result>0)
+	{
+		MessageBox(NULL, L"Desync occured, an invalid packet size was received", L"Error", NULL);
+		return 0;
+	}
+
 	//send data
 	if(io.numControl==0)
 	{

@@ -1,4 +1,4 @@
-// Copyright (c) 2013 All Right Reserved, http://8bitbear.com/
+// Copyright (c) 2014 All Right Reserved, http://8bitbear.com/
 //
 // THIS CODE AND INFORMATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY 
 // KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
@@ -7,7 +7,7 @@
 //
 // <author>Stephen Wheeler</author>
 // <email>bear@8bitbear.com</email>
-// <date>2013-01-15</date>
+// <date>2014-01-15</date>
 #pragma once
 #include <Windows.h>
 class TimePast

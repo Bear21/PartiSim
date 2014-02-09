@@ -1,4 +1,4 @@
-// Copyright (c) 2013 All Right Reserved, http://8bitbear.com/
+// Copyright (c) 2014 All Right Reserved, http://8bitbear.com/
 //
 // THIS CODE AND INFORMATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY 
 // KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
@@ -7,7 +7,7 @@
 //
 // <author>Stephen Wheeler</author>
 // <email>bear@8bitbear.com</email>
-// <date>2013-01-15</date>
+// <date>2014-01-15</date>
 #include "DxApp.h"
 
 
@@ -15,7 +15,6 @@
 
 DxApp::DxApp(void)
 	: m_close(false), m_pImmediateContext(nullptr), m_mouse1(false), m_mouse2(false), m_timer(),
-	//m_pData(nullptr), m_pDataPartLoc(nullptr), m_pCountGrid(nullptr), 
 	m_pTextureBuffer(nullptr), m_pTextureRefBuffer(nullptr),
 	m_pTextureView(nullptr), m_pTextureRefView(nullptr),
 	m_performanceS(), m_performanceD(), m_performanceR(),
@@ -36,22 +35,7 @@ DxApp::~DxApp(void)
 	{
 		m_pSwapChain->Release();
 	}
-	/*if(m_pData)
-	{
-		delete m_pData;
-	}
-	if(m_pDataPartLoc)
-	{
-		delete m_pDataPartLoc;
-	}
-	if(m_pCountGrid)
-	{
-		delete m_pCountGrid;
-	}
-	if(m_pAcclView)
-	{
-		delete m_pAcclView;
-	}*/
+
 	m_pd3dDevice->Release();
 	m_pImmediateContext->Release();
 	m_pRasterizeNoDepth->Release();
@@ -62,6 +46,9 @@ DxApp::~DxApp(void)
 	m_pVertexShader->Release();
 	m_pVertexInput->Release();
 	m_pPixelShader->Release();
+	m_pSimShader->Release();
+	m_pResetShader->Release();
+	m_pHaltShader->Release();
 	if(m_settings.inFile)
 		fclose(m_settings.inFile);
 	if(m_settings.outFile)
@@ -84,6 +71,7 @@ int DxApp::Init(DxAppSetupDesc *in_desc)
 	m_settings.winStyle = in_desc->windowStyle;
 	m_settings.inputType = in_desc->inputType;
 	m_settings.timeMode = in_desc->timeMode;
+	m_settings.renderMode = in_desc->renderMode;
 
 	if((m_settings.inputType & 36) != 0 )
 	{
@@ -131,7 +119,7 @@ int DxApp::Init(DxAppSetupDesc *in_desc)
 
 	if(((m_settings.inputType & 2) == 2) && (in_desc->inFileName!=0))
 	{
-		result = _wfopen_s(&m_settings.inFile, in_desc->inFileName, L"rb");
+		RecordUpdate(in_desc->inFileName);
 	}
 	else
 	{
@@ -142,6 +130,14 @@ int DxApp::Init(DxAppSetupDesc *in_desc)
 	if(((m_settings.inputType & 8) == 8) && in_desc->outFileName!=0)
 	{
 		result = _wfopen_s(&m_settings.outFile, in_desc->outFileName, L"wb");
+		if(result!=0)
+			m_settings.inputType-=8;
+		else
+		{
+			int version = COMMS_CONNECT_VER;
+			fwrite(&version, 4, 1, m_settings.outFile);
+			fseek(m_settings.outFile, 12, SEEK_CUR);
+		}
 	}
 	else
 	{
@@ -466,7 +462,16 @@ int DxApp::SetupDxResources()
 
 	hr = m_pd3dDevice->CreatePixelShader( data, length, NULL, &m_pHaltShader );
 
+	fopen_s(&FP, "CSsim.cso", "rb");
+	length = fread(tempbuffer, 1, 32768, FP);
+	fclose(FP);
+	data = tempbuffer;
+
+	hr = m_pd3dDevice->CreateComputeShader( data, length, NULL, &m_pCSSimShader );
+
 	m_pImmediateContext->VSSetShader(m_pVertexShader, NULL, 0);
+
+	m_pImmediateContext->CSSetShader(m_pCSSimShader, NULL, 0);
 
 
 	m_pImmediateContext->PSSetSamplers(0, 1, &m_pSamplerState);
@@ -498,7 +503,7 @@ int DxApp::SetupDxResources()
     descT.SampleDesc.Count = 1;
     descT.SampleDesc.Quality = 0;
     descT.Usage = D3D11_USAGE_DEFAULT;
-    descT.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+    descT.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
     descT.CPUAccessFlags = 0;
     descT.MiscFlags = 0;
 
@@ -540,6 +545,9 @@ int DxApp::SetupDxResources()
 
 	m_pd3dDevice->CreateRenderTargetView(m_pTextureDataBuffer[0], NULL, &m_pDataRenderTargetView[0]);
 	m_pd3dDevice->CreateRenderTargetView(m_pTextureDataBuffer[1], NULL, &m_pDataRenderTargetView[1]);
+
+	m_pd3dDevice->CreateUnorderedAccessView(m_pTextureDataBuffer[0], NULL, &m_pTextureDataUAView[0]);
+	m_pd3dDevice->CreateUnorderedAccessView(m_pTextureDataBuffer[1], NULL, &m_pTextureDataUAView[1]);
 
 	ID3D11Buffer *CBList[] = {m_pConstantBuffer, m_pSimInfoCB, m_pSimInput};
 	m_pImmediateContext->PSSetConstantBuffers(0, 3, CBList);
@@ -663,4 +671,50 @@ void DxApp::DisplayBenchmarkComplete()
 		rc.right-rc.left, rc.bottom-rc.top,
 		SWP_FRAMECHANGED
 	);
+}
+
+void DxApp::RecordUpdate(wchar_t *filename)
+{
+	FILE *file;
+	int	result = _wfopen_s(&file, filename, L"rb");
+	if(!result)
+	{
+		int version;
+		fread(&version, 4, 1, file);
+		if(version==COMMS_CONNECT_VER)//this version is used because the sockets use the same data structures
+		{
+			fseek(file, 16, SEEK_SET);
+			m_settings.inFile = file;
+			return;
+		}
+		//go through list of all previous versions here if applicable
+
+		//it wasn't a previous version, the first version didn't have a version number, assume it's that and convert
+		fseek(file, 0, SEEK_END);
+		int fileLength = ftell(file);
+		int *fileData = new int[fileLength+4];
+		fseek(file, 0, SEEK_SET);
+		fread(((char*)fileData)+16, fileLength, 1, file);
+		fileData[0] = COMMS_CONNECT_VER;
+		fclose(file);
+		int position = 5;
+		for(; position<fileLength+4; position+=4)
+		{
+			int inputs = fileData[position];
+			while(inputs!=0)
+			{
+				inputs--;
+				position+=4;
+				if(fileData[position]==1)
+				{
+					fileData[position-1]+=2;
+					fileData[position]=0;
+				}
+			}
+		}
+		_wfopen_s(&file, filename, L"wb");
+		fwrite(fileData, fileLength+4, 1, file);
+		fclose(file);
+		_wfopen_s(&m_settings.inFile, filename, L"rb");
+	}
 }

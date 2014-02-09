@@ -1,15 +1,3 @@
-// Copyright (c) 2014 All Right Reserved, http://8bitbear.com/
-//
-// THIS CODE AND INFORMATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY 
-// KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
-// PARTICULAR PURPOSE.
-//
-// <author>Stephen Wheeler</author>
-// <email>bear@8bitbear.com</email>
-// <date>2014-01-15</date>
-#include "shader.fx"
-
 struct SimControl
 {
 	int inputLow;
@@ -26,12 +14,26 @@ cbuffer SimInput : register( b2 )
 	SimControl controlInput[16];
 };
 
+cbuffer SimDetails : register( b1 )
+{
+	float4 Box;
+	float tscale;
+	int2	dimensions;
+}
+cbuffer PSCB : register( b0 )
+{
+	int height;
+}
 
+
+Texture2D<float4> tx2Data : register( t0);
+RWTexture2D<float4> tx2DataOut : register( u0);
 RWByteAddressBuffer	tx2Buffer : register( u1 );
 
-float4 sim(PS_INPUT_TEX input) : SV_Target
+[numthreads(16, 16, 1)]
+void CSSim( uint3 DTid : SV_DispatchThreadID )
 {
-	float4 ref = tx2Data.Sample(samLinear, input.Tex);//locs[idx[0]][idx[1]];
+	float4 ref = tx2Data.Load(DTid);
 	float2 loc = ref.zw;
 	float2 vel = ref.xy;
 	float4 output;
@@ -95,7 +97,7 @@ float4 sim(PS_INPUT_TEX input) : SV_Target
 	addr*=4;
 	tx2Buffer.InterlockedAdd(addr, 100, result);
 
-
+	tx2DataOut[DTid.xy] = output;
 	//antialiasing.
 	/*float2 aa = loc % 1;
 	uint addr = trunc(loc.x*tscale);
@@ -114,6 +116,5 @@ float4 sim(PS_INPUT_TEX input) : SV_Target
 	share = (aa.x)*(aa.y);
 	tx2Buffer.InterlockedAdd(addr, share*100, result);*/
 
-	return output;
+	//return output;
 }
-

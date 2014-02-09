@@ -1,4 +1,4 @@
-// Copyright (c) 2013 All Right Reserved, http://8bitbear.com/
+// Copyright (c) 2014 All Right Reserved, http://8bitbear.com/
 //
 // THIS CODE AND INFORMATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY 
 // KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
@@ -7,7 +7,7 @@
 //
 // <author>Stephen Wheeler</author>
 // <email>bear@8bitbear.com</email>
-// <date>2013-01-15</date>
+// <date>2014-01-15</date>
 #include "DxApp.h"
 
 
@@ -71,12 +71,26 @@ void DxApp::Render()
 		}
 	}
 	
+	if(m_settings.renderMode==0)
+	{
+		m_pImmediateContext->PSSetShaderResources(0, 1, srvSim);
+		m_pImmediateContext->OMSetRenderTargetsAndUnorderedAccessViews(1, &m_pDataRenderTargetView[!m_flip], dsNullview, 1, 1, &m_pTextureBufferUAView, NULL);
+		m_pImmediateContext->PSSetShader(m_pSimShader, NULL, 0);
 	
-	m_pImmediateContext->PSSetShaderResources(0, 1, srvSim);
-	m_pImmediateContext->OMSetRenderTargetsAndUnorderedAccessViews(1, &m_pDataRenderTargetView[!m_flip], dsNullview, 1, 1, &m_pTextureBufferUAView, NULL);
-	m_pImmediateContext->PSSetShader(m_pSimShader, NULL, 0);
-	
-	m_pImmediateContext->Draw(4, 0);
+		m_pImmediateContext->Draw(4, 0);
+	}
+	else
+	{		
+		m_pImmediateContext->CSSetShaderResources(0, 1, srvSim);
+		ID3D11UnorderedAccessView *UAVList[] = {m_pTextureDataUAView[!m_flip], m_pTextureBufferUAView};
+		m_pImmediateContext->CSSetUnorderedAccessViews(0, 2, UAVList, NULL);
+		m_pImmediateContext->Dispatch(PARTNUM/16, PARTNUM/16, 1);
+
+		UAVList[0] = NULL;
+		UAVList[1] = NULL;
+		m_pImmediateContext->CSSetUnorderedAccessViews(0, 2, UAVList, NULL);
+		m_pImmediateContext->CSSetShaderResources(0, 1, &srvNull);
+	}
 
 	/*m_pImmediateContext->CopyResource(m_pTextureExport, m_pTextureBuffer);
 	D3D11_MAPPED_SUBRESOURCE debughelper;
@@ -100,7 +114,7 @@ void DxApp::Render()
 		//temp code for stable network play
 		while((gap = m_holdTime.Peek())<1.f/m_settings.timeMode)
 		{
-			if((gap-1.f/m_settings.timeMode)>0.002f)
+			if((1.f/m_settings.timeMode-gap)>0.002f)
 				Sleep(1);
 		}
 	}
@@ -168,6 +182,7 @@ int DxApp::SetupSizeDependentResources()
 
 	ID3D11Buffer *CBList[] = {m_pConstantBuffer, m_pSimInfoCB, m_pSimInput};
 	m_pImmediateContext->PSSetConstantBuffers(0, 3, CBList);
+	m_pImmediateContext->CSSetConstantBuffers(0, 3, CBList);
 
 	return 0;
 }
@@ -264,6 +279,7 @@ void DxApp::ResizeSizeDependentResources(int width, int height)
 
 				ID3D11Buffer *CBList[] = {m_pConstantBuffer, m_pSimInfoCB, m_pSimInput};
 				m_pImmediateContext->PSSetConstantBuffers(0, 3, CBList);
+				m_pImmediateContext->CSSetConstantBuffers(0, 3, CBList);
 			}
 		}
 		else

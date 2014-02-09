@@ -1,4 +1,4 @@
-// Copyright (c) 2013 All Right Reserved, http://8bitbear.com/
+// Copyright (c) 2014 All Right Reserved, http://8bitbear.com/
 //
 // THIS CODE AND INFORMATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY 
 // KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
@@ -7,7 +7,7 @@
 //
 // <author>Stephen Wheeler</author>
 // <email>bear@8bitbear.com</email>
-// <date>2013-01-15</date>
+// <date>2014-01-15</date>
 #include "DxApp.h"
 #include <tchar.h>
 
@@ -30,6 +30,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	wchar_t *hostName=0;
 	wchar_t *param =0;
 	int timeSample=0;
+	int renderMode=0;
 
 	if(param=wcsstr(lpCmdLine, L"+r "))
 	{
@@ -70,8 +71,13 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 		swscanf_s(timeInput, L"%d", &timeSample, 4);
 		delete [] timeInput;
 	}
+
+	if(param=wcsstr(lpCmdLine, L"+compute"))
+	{
+		renderMode=1;
+	}
 	
-	DxAppSetupDesc daDesc = {hInstance, L"PartiSim", L"PartiSim", WS_OVERLAPPEDWINDOW | WS_VISIBLE, 1280, 800, nCmdShow, startvalue, timeSample, readFile, writeFile, hostName};
+	DxAppSetupDesc daDesc = {hInstance, L"PartiSim", L"PartiSim", WS_OVERLAPPEDWINDOW | WS_VISIBLE, 1280, 800, nCmdShow, renderMode, startvalue, timeSample, readFile, writeFile, hostName};
 	if(Record((DxAppErrors)app->Init(&daDesc)) != 0)
 	{
 		Dump("errorlog.txt");

@@ -70,5 +70,8 @@
     <FxCompile Include="halt.hlsl">
       <Filter>shader</Filter>
     </FxCompile>
+    <FxCompile Include="CSsim.hlsl">
+      <Filter>shader</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

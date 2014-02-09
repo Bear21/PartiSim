@@ -1,4 +1,4 @@
-// Copyright (c) 2013 All Right Reserved, http://8bitbear.com/
+// Copyright (c) 2014 All Right Reserved, http://8bitbear.com/
 //
 // THIS CODE AND INFORMATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY 
 // KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
@@ -7,7 +7,7 @@
 //
 // <author>Stephen Wheeler</author>
 // <email>bear@8bitbear.com</email>
-// <date>2013-01-15</date>
+// <date>2014-01-15</date>
 #pragma once
 #include "Comms.h"
 #include "Common.h"
@@ -18,7 +18,7 @@
 #include "timecounter.h"
 
 
-//using namespace concurrency;
+
 using namespace DirectX;
 
 #define PARTNUM 2048
@@ -31,30 +31,13 @@ struct DxAppSetupDesc
 	DWORD			windowStyle;
 	int				windowSizeX, windowSizeY;
 	int				cmdShow;
+	int				renderMode;
 	int				inputType;
 	int				timeMode;
 	wchar_t			*inFileName, *outFileName;
 	wchar_t			*hostName;
 };
 
-
-//#pragma pack(push, 1) // ensure no padding
-//__declspec(align(4)) struct SimControl
-//{
-//	int mouse1;
-//	int mouse2;
-//	float mousePosX;
-//	float mousePosY;
-//};
-//
-//struct SimInput
-//{
-//	float timeP;
-//	unsigned int numControl;
-//	int reserved1, reserved2;
-//	SimControl controlInput[16];
-//};
-//#pragma pack(pop)
 
 struct Settings
 {
@@ -67,6 +50,8 @@ struct Settings
 	HINSTANCE hinst;
 	bool fullscreen;
 	DWORD winStyle;
+
+	int renderMode;
 
 	//gamesettings
 	//Todo: Make an enum for inputType bitfield
@@ -105,6 +90,7 @@ private:
 	ID3D11InputLayout*			m_pVertexInput;
 	ID3D11PixelShader*			m_pPixelShader;
 	ID3D11PixelShader*			m_pSimShader;
+	ID3D11ComputeShader*		m_pCSSimShader;
 	ID3D11PixelShader*			m_pResetShader;
 	ID3D11PixelShader*			m_pHaltShader;
 	ID3D11Buffer*				m_pConstantBuffer;
@@ -123,6 +109,7 @@ private:
 	//ID3D11Texture2D			*m_pTextureDataExport; // can be used for debugging
 	ID3D11ShaderResourceView	*m_pTextureDataView[2];
 	ID3D11RenderTargetView		*m_pDataRenderTargetView[2];
+	ID3D11UnorderedAccessView	*m_pTextureDataUAView[2];
 	int							m_flip;
 	ID3D11Buffer                *m_pTextureRefBuffer;
 	ID3D11ShaderResourceView	*m_pTextureRefView;
@@ -173,6 +160,8 @@ private:
 	void SimZeroVelocity();
 
 	void DisplayBenchmarkComplete();
+
+	void RecordUpdate(wchar_t *filename);
 };
 
 struct SimDetailsCB
